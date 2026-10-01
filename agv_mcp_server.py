@@ -1,4 +1,5 @@
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
 mcp = FastMCP("agv-fleet")
 
@@ -96,6 +97,42 @@ def fetch_robot(robot_id: str) -> dict:
 def map_info() -> dict:
     """SLAM 맵 경계와 등록된 지점."""
     return {"bounds": MAP_BOUNDS, "locations": LOCATIONS}
+
+from mcp.server.fastmcp.prompts import base
+
+
+@mcp.prompt(
+    name="diagnose_robot",
+    description="특정 AGV의 상태를 점검하고 조치 사항을 정리한다."
+)
+def diagnose_robot(
+    robot_id: str = Field(description="진단할 AGV id, 예: agv-01")
+) -> list[base.Message]:
+    return [
+        base.UserMessage(
+            f"{robot_id}의 상태를 점검해줘.\n"
+            "1. 상태 조회 도구로 배터리와 주행 상태를 확인할 것\n"
+            "2. 저장된 운행 노트가 있으면 함께 확인할 것\n"
+            "3. 지금 작업 배정이 가능한지 판단하고, 불가하면 이유와 조치를 한국어로 설명할 것\n"
+            "추측하지 말고 도구로 확인한 사실만 쓸 것."
+        )
+    ]
+
+
+@mcp.prompt(
+    name="plan_delivery",
+    description="목적지까지 배송 가능한 AGV를 고르고 이동 명령을 내린다."
+)
+def plan_delivery(
+    destination: str = Field(description="목적지 이름, 예: zone_b")
+) -> list[base.Message]:
+    return [
+        base.UserMessage(
+            f"{destination}으로 배송할 로봇을 고르고 이동시켜줘.\n"
+            "등록된 지점과 각 로봇 상태를 먼저 확인하고, "
+            "가능한 로봇이 없으면 이동 명령을 시도하지 말고 이유를 설명할 것."
+        )
+    ]
 
 if __name__ == "__main__":
     mcp.run()  # stdio 방식

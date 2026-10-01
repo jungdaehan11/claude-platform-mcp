@@ -59,6 +59,14 @@ class MCPClient:
             if hasattr(self.session(), "list_resourceTemplates") \
             else await self.session().list_resource_templates()
         return result.resourceTemplates
+    
+    async def list_prompts(self) -> list[types.Prompt]:
+        result = await self.session().list_prompts()
+        return result.prompts
+
+    async def get_prompt(self, prompt_name: str, args: dict[str, str]):
+        result = await self.session().get_prompt(prompt_name, args)
+        return result.messages
 
 
 # 직접 실행하면 간단한 테스트
