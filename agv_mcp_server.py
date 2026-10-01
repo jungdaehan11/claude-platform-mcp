@@ -69,5 +69,33 @@ def read_notes(robot_id: str) -> dict:
     notes = [n for n in _load_memory() if n["robot_id"] == robot_id]
     return {"robot_id": robot_id, "notes": notes[-10:]}  # 최근 10개만 = 적시 로딩
 
+@mcp.resource(
+    "agv://robots",
+    mime_type="application/json"
+)
+def list_robots() -> list[str]:
+    """등록된 AGV id 목록 (자동완성용)."""
+    return list(ROBOTS.keys())
+
+
+@mcp.resource(
+    "agv://robots/{robot_id}",
+    mime_type="application/json"
+)
+def fetch_robot(robot_id: str) -> dict:
+    """특정 AGV의 현재 상태."""
+    if robot_id not in ROBOTS:
+        raise ValueError(f"Robot with id {robot_id} not found")
+    return {"robot_id": robot_id, **ROBOTS[robot_id]}
+
+
+@mcp.resource(
+    "agv://map",
+    mime_type="application/json"
+)
+def map_info() -> dict:
+    """SLAM 맵 경계와 등록된 지점."""
+    return {"bounds": MAP_BOUNDS, "locations": LOCATIONS}
+
 if __name__ == "__main__":
     mcp.run()  # stdio 방식
