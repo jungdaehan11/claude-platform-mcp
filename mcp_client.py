@@ -1,4 +1,7 @@
 import sys
+import json
+from typing import Any
+from pydantic import AnyUrl
 from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters, types
 from mcp.client.stdio import stdio_client
@@ -36,6 +39,26 @@ class MCPClient:
 
     async def call_tool(self, tool_name: str, tool_input: dict) -> types.CallToolResult:
         return await self.session().call_tool(tool_name, tool_input)
+
+    async def read_resource(self, uri: str) -> Any:
+        result = await self.session().read_resource(AnyUrl(uri))
+        resource = result.contents[0]
+
+        if isinstance(resource, types.TextResourceContents):
+            if resource.mimeType == "application/json":
+                return json.loads(resource.text)
+
+        return resource.text
+
+    async def list_resources(self) -> list[types.Resource]:
+        result = await self.session().list_resources()
+        return result.resources
+
+    async def list_resource_templates(self) -> list[types.ResourceTemplate]:
+        result = await self.session().list_resourceTemplates() \
+            if hasattr(self.session(), "list_resourceTemplates") \
+            else await self.session().list_resource_templates()
+        return result.resourceTemplates
 
 
 # 직접 실행하면 간단한 테스트
